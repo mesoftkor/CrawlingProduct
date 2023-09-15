@@ -12,6 +12,8 @@ using HtmlAgilityPack;
 using System.IO;
 using System.Net.NetworkInformation;
 using CefSharp.WinForms;
+using CefSharp.DevTools.DOM;
+using CefSharp.Internals;
 
 namespace CrawlingProduct {
     public partial class formCrawling : Form {
@@ -27,7 +29,7 @@ namespace CrawlingProduct {
         public formCrawling() {
             InitializeComponent();
             InitializeCefSharp();
-            GetModifiedMac();
+            //GetModifiedMac();
             //시작폴더에 product_list.txt 파일이 있으면 자동으로 가져옴.
             InitDataTable();
             if (File.Exists(Application.StartupPath + "\\product_list.txt")) {
@@ -36,8 +38,8 @@ namespace CrawlingProduct {
                 }
                 gridProductList.DataSource = dtProductList;
             }
-        }
 
+        }
         /// <summary>
         /// 상품리스트와 상태를 저장할 DataTable 초기화
         /// </summary>
@@ -70,6 +72,20 @@ namespace CrawlingProduct {
             _chrome.AddressChanged += Browser_AddressChanged;
             //_chrome.JavascriptMessageReceived += OnBrowserJavascriptMessageReceived;
             //_chrome.FrameLoadEnd += OnFrameLoadEnd;
+        }
+
+        private void initBrowser() {
+            _chrome = new CefSharp.WinForms.ChromiumWebBrowser();
+            tabBrowser.Controls.Add(this._chrome);
+            tabBrowser.Location = new System.Drawing.Point(4, 22);
+            tabBrowser.Name = "tabBrowser";
+            tabBrowser.Padding = new System.Windows.Forms.Padding(3);
+            tabBrowser.Size = new System.Drawing.Size(908, 466);
+            tabBrowser.TabIndex = 0;
+            tabBrowser.Text = "Browser";
+            tabBrowser.UseVisualStyleBackColor = true;
+            _chrome.LoadingStateChanged += OnLoadingStateChanged;
+            _chrome.AddressChanged += Browser_AddressChanged;
         }
 
         #region Crawing Product
@@ -181,15 +197,16 @@ namespace CrawlingProduct {
         private async void OnLoadingStateChanged(object sender, LoadingStateChangedEventArgs args) {
             Console.WriteLine(string.Format("[{0}]{1}", strProductNum, strUrl));
             if (!args.IsLoading && strUrl.Contains(strProductNum)) {
-                JavascriptResponse check_response = await _chrome.EvaluateScriptAsync("document.documentElement.outerHTML");
-
-                if (check_response.Success && check_response.Result != null) {
-                    if (check_response.Result.ToString().Contains("strUnusualCheckImage")) {
+                //블럭 우회 체크
+                
+                
+                //if ()
                         GetModifiedMac();
+                    initBrowser();
                         Login();
                         return;
-                    }
-                }
+                //    }
+                //}
 
                 //현재 html에 Sorry, we have detected unusual traffic from your network. 가 뜨는지 확인
                 //https://img.alicdn.com/imgextra/i2/O1CN010VLpQY1VWKHBQuBUQ_!!6000000002660-2-tps-222-222.png
@@ -525,12 +542,20 @@ return true;
         private void formCrawling_FormClosing(object sender, FormClosingEventArgs e) {
             _chrome.Dispose();
         }
-        #endregion
-
         private void txtUrl_KeyPress(object sender, KeyPressEventArgs e) {
-            if(e.KeyChar == (char)Keys.Enter) {
+            if (e.KeyChar == (char)Keys.Enter) {
                 _chrome.LoadUrl(txtUrl.Text);
             }
         }
+        #endregion
+
+        #region UnusaseCheck
+        private void CheckBrowser() {
+            Point WebLocation = _chrome.PointToScreen(new Point(0, 0));
+
+            //(WebLocation.X, WebLocation.Y, _chrome.Size.Width, _chrome.Size.Height)
+        }
+
+        #endregion
     }
 }

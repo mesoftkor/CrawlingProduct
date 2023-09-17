@@ -246,6 +246,10 @@ return true;
                 // JavaScript를 실행하여 페이지의 innerHTML을 가져옵니다.
                 JavascriptResponse response = await _chrome.EvaluateScriptAsync("document.documentElement.outerHTML");
 
+                //디렉토리가 없는지 체크해서 생성
+                if (!Directory.Exists(Application.StartupPath + "\\taobao")) {
+                    Directory.CreateDirectory(Application.StartupPath + "\\taobao");
+                }
                 if (response.Success && response.Result != null) {
                     System.IO.File.WriteAllText(string.Format(@"{0}\taobao\{1}.txt", Application.StartupPath, strProductNum), response.Result.ToString());
                 }

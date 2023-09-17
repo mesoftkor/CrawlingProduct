@@ -43,6 +43,7 @@
             this.txtHtml = new System.Windows.Forms.RichTextBox();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.btnComapareImage = new System.Windows.Forms.Button();
             this.tabMain.SuspendLayout();
             this.tabBrowser.SuspendLayout();
             this.layoutTop.SuspendLayout();
@@ -102,6 +103,7 @@
             this.layoutTop.Controls.Add(this.btnStart, 2, 2);
             this.layoutTop.Controls.Add(this.btnShowHtml, 5, 2);
             this.layoutTop.Controls.Add(this.btnGetProductList, 4, 1);
+            this.layoutTop.Controls.Add(this.btnComapareImage, 2, 1);
             this.layoutTop.Dock = System.Windows.Forms.DockStyle.Top;
             this.layoutTop.Location = new System.Drawing.Point(0, 0);
             this.layoutTop.Name = "layoutTop";
@@ -277,6 +279,16 @@
             this.statusLabel.Text = "toolStripStatusLabel1";
             this.statusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
+            // btnComapareImage
+            // 
+            this.btnComapareImage.Location = new System.Drawing.Point(233, 13);
+            this.btnComapareImage.Name = "btnComapareImage";
+            this.btnComapareImage.Size = new System.Drawing.Size(194, 19);
+            this.btnComapareImage.TabIndex = 0;
+            this.btnComapareImage.Text = "이미지 비교 테스트(미작업)";
+            this.btnComapareImage.UseVisualStyleBackColor = true;
+            this.btnComapareImage.Click += new System.EventHandler(this.btnComapareImage_Click);
+            // 
             // formCrawling
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
@@ -330,6 +342,7 @@
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel statusLabel;
         private System.Windows.Forms.TextBox txtUrl;
+        private System.Windows.Forms.Button btnComapareImage;
     }
 }
 

@@ -14,6 +14,7 @@ using System.Net.NetworkInformation;
 using CefSharp.WinForms;
 using CefSharp.DevTools.DOM;
 using CefSharp.Internals;
+using System.Diagnostics;
 
 namespace CrawlingProduct {
     public partial class formCrawling : Form {
@@ -30,6 +31,18 @@ namespace CrawlingProduct {
             InitializeComponent();
             InitializeCefSharp();
             //GetModifiedMac();
+            //ID, Pass 임시로 가져오기
+            if (File.Exists(Application.StartupPath + "\\login.txt")) {
+                foreach (string strReadLine in File.ReadLines(Application.StartupPath + "\\login.txt")) {
+                    string[] strLogin = strReadLine.Trim().Split(' ');
+                    if(strLogin.Length == 2) {
+                        txtId.Text = strLogin[0];
+                        txtPass.Text = strLogin[1];
+                    }
+                }
+                gridProductList.DataSource = dtProductList;
+            }
+
             //시작폴더에 product_list.txt 파일이 있으면 자동으로 가져옴.
             InitDataTable();
             if (File.Exists(Application.StartupPath + "\\product_list.txt")) {
@@ -175,7 +188,6 @@ namespace CrawlingProduct {
             //자료수집 시작
             await Task.Run(() =>
             {
-                // 시간이 오래 걸리는 작업
                 NextProductCall();
                 System.Threading.Thread.Sleep(2000);
             });
@@ -198,13 +210,11 @@ namespace CrawlingProduct {
             Console.WriteLine(string.Format("[{0}]{1}", strProductNum, strUrl));
             if (!args.IsLoading && strUrl.Contains(strProductNum)) {
                 //블럭 우회 체크
-                
-                
                 //if ()
-                        GetModifiedMac();
-                    initBrowser();
-                        Login();
-                        return;
+                    //    GetModifiedMac();
+                    //initBrowser();
+                    //    Login();
+                    //    return;
                 //    }
                 //}
 
@@ -557,5 +567,14 @@ return true;
         }
 
         #endregion
+
+        private void btnComapareImage_Click(object sender, EventArgs e) {
+            //_chrome.CaptureScreenshotAsync(CefSharp.DevTools.Page.CaptureScreenshotFormat.Png);
+            Stopwatch a = new Stopwatch();
+            a.Start();
+            Console.WriteLine(new clsCompareImage().CompareImage().ToString());
+            a.Stop();
+            Console.WriteLine(a.ElapsedMilliseconds);
+        }
     }
 }

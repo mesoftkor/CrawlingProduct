@@ -1,4 +1,5 @@
 ﻿using CefSharp;
+using CefSharp.WinForms;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,10 +12,12 @@ using System.Windows.Forms;
 using HtmlAgilityPack;
 using System.IO;
 using System.Net.NetworkInformation;
-using CefSharp.WinForms;
 using CefSharp.DevTools.DOM;
 using CefSharp.Internals;
 using System.Diagnostics;
+using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace CrawlingProduct {
     public partial class formCrawling : Form {
@@ -246,14 +249,26 @@ return true;
                 // JavaScript를 실행하여 페이지의 innerHTML을 가져옵니다.
                 JavascriptResponse response = await _chrome.EvaluateScriptAsync("document.documentElement.outerHTML");
 
-                //디렉토리가 없는지 체크해서 생성
-                if (!Directory.Exists(Application.StartupPath + "\\taobao")) {
-                    Directory.CreateDirectory(Application.StartupPath + "\\taobao");
-                }
+                /*//기존 HTML 전체를 가져와서 폴더에 저장하는 형태
+                 * 
+
+                                //디렉토리가 없는지 체크해서 생성
+                                if (!Directory.Exists(Application.StartupPath + "\\taobao")) {
+                                    Directory.CreateDirectory(Application.StartupPath + "\\taobao");
+                                }
+                                if (response.Success && response.Result != null) {
+                                    System.IO.File.WriteAllText(string.Format(@"{0}\taobao\{1}.txt", Application.StartupPath, strProductNum), response.Result.ToString());
+                                }
+                                
+                */
                 if (response.Success && response.Result != null) {
-                    System.IO.File.WriteAllText(string.Format(@"{0}\taobao\{1}.txt", Application.StartupPath, strProductNum), response.Result.ToString());
+                    ParseHtmlWithXpathToDataTable(response.Result.ToString());
+                    dtProductList.Rows[intDataRowNum]["complete"] = "Completed";
                 }
-                dtProductList.Rows[intDataRowNum]["complete"] = "Completed";
+                else {
+                    dtProductList.Rows[intDataRowNum]["complete"] = "Not Completed";
+                }
+                
                 PrintStatusConsole(strProductNum + "상품 저장 완료");
                 NextProductCall();
             }else if(!args.IsLoading && strUrl.Contains("https://item.taobao.com//item.htm/")) {
@@ -289,17 +304,24 @@ return true;
 
             //상품명으로 타입 체크
             // //*[@id='root']/div/div[2]/div[1]/a/div[1]/div[1]/div
-            if (doc.DocumentNode.SelectSingleNode("//*[@id='root']/div/div[2]/div[2]/div[1]/div/div[2]/div[1]/h1") != null) {
-                ParseHtmlToDataTableTypeA(doc);
+            if (doc.DocumentNode.SelectSingleNode("//*[@id='J_Title']/h3") != null) {
+                dtProductList.Rows[intDataRowNum]["product_type"] = "taobao";
+                ParseHtmlToJsonTypeTaobao(doc, htmlContent);
             }
+            else {
+                dtProductList.Rows[intDataRowNum]["product_type"] = "Unknown";
+                dtProductList.Rows[intDataRowNum]["complete"] = "Not Completed";
+            }
+            //else if (doc.DocumentNode.SelectSingleNode("//*[@id='root']/div/div[2]/div[2]/div[1]/div/div[2]/div[1]/h1") != null) {
+            //    dtProductList.Rows[intDataRowNum]["product_type"] = "tmall";
+            //    ParseHtmlToJsonTypeTmall(doc);
+            //}
+
             // /html/body/div[6]/div/div[3]/div[1]/div[1]/div[1]/div/div[2]/div/div/div[1]/h3
-            if (doc.DocumentNode.SelectSingleNode("/html/body/div[6]/div/div[3]/div[1]/div[1]/div[1]/div/div[2]/div/div/div[1]/h3") != null) {
-                ParseHtmlToDataTableTypeB(doc);
-            }
-            this.Invoke(new Action(delegate () {
-                //gridControl1.DataSource = dt;
-                MessageBox.Show("파싱완료");
-            }));
+            //this.Invoke(new Action(delegate () {
+            //gridControl1.DataSource = dt;
+            //    MessageBox.Show("파싱완료");
+            //}));
 
 
         }
@@ -309,26 +331,27 @@ return true;
         /// 테스트 상품 : 712764371053
         /// </summary>
         /// <param name="doc"></param>
-        private void ParseHtmlToDataTableTypeB(HtmlAgilityPack.HtmlDocument doc) {
+        private void ParseHtmlToDataTableTypeTaobao(HtmlAgilityPack.HtmlDocument doc) {
             string strData = "";
             HtmlAgilityPack.HtmlNodeCollection nodes;
             HtmlAgilityPack.HtmlNode selNode;
             DataRow dr;
-            AddDataRow("Product Type", "B");
+            AddDataRow("Product Type", "Taobao");
             //샵네임
-            selNode = doc.DocumentNode.SelectSingleNode("/html/body/div[6]/div/div[2]/div/div/div/div/div[1]/div/div[1]/a/img");
-            if (selNode != null) {
-                AddDataRow("샵네임", selNode.Attributes["src"].Value);
-            }
+            //selNode = doc.DocumentNode.SelectSingleNode("/html/body/div[6]/div/div[2]/div/div/div/div/div[1]/div/div[1]/a/img");
+            //if (selNode != null) {
+            //    AddDataRow("샵네임", selNode.Attributes["src"].Value);
+            //}
 
             //상품명
-            selNode = doc.DocumentNode.SelectSingleNode("/html/body/div[6]/div/div[3]/div[1]/div[1]/div[1]/div/div[2]/div/div/div[1]/h3");
+            //selNode = doc.DocumentNode.SelectSingleNode("/html/body/div[6]/div/div[3]/div[1]/div[1]/div[1]/div/div[2]/div/div/div[1]/h3");
+            selNode = doc.DocumentNode.SelectSingleNode("//*[@id='J_Title']/h3");
             if (selNode != null) {
                 AddDataRow("상품명", selNode.InnerText.Trim());
             }
 
             //옵션1차
-
+            ////*[@id="J_isku"]/div/dl[1]/dd/ul/li
             nodes = doc.DocumentNode.SelectNodes("//*[@id=\"J_isku\"]/div/dl[1]/dd/ul/li");
             if (nodes != null) {
                 for (int i = 0; i < nodes.Count; i++) {
@@ -366,10 +389,10 @@ return true;
             ////*[@id="root"]/div/div[2]/div[2]/div[3]/div[2]/div[1]/div/div[2]/div/div[1]/img
             // /html/body/div[6]/div/div[3]/div[4]/div[1]/div[1]/div[1]/div[4]/div/div/div/img[1]
             // /html/body/div[6]/div/div[3]/div[4]/div[1]/div[1]/div[1]/div[4]/div/div/div/img[2]
-            nodes = doc.DocumentNode.SelectNodes("/html/body/div[6]/div/div[3]/div[4]/div[1]/div[1]/div[1]/div[4]/div/div/div/img");
+            nodes = doc.DocumentNode.SelectNodes("//*[@id='J_DivItemDesc']/p[3]/img");
             if (nodes != null) {
                 for (int i = 0; i < nodes.Count - 1; i++) {
-                    var selectNode = doc.DocumentNode.SelectSingleNode(string.Format("/html/body/div[6]/div/div[3]/div[4]/div[1]/div[1]/div[1]/div[4]/div/div/div/img[{0}]", i + 1));
+                    var selectNode = doc.DocumentNode.SelectSingleNode(string.Format("//*[@id='J_DivItemDesc']/p[3]/img[{0}]", i + 1));
                     if (selectNode != null) {
                         AddDataRow("상세이미지[" + (i + 1) + "]", selectNode.Attributes["src"].Value);
                     }
@@ -377,12 +400,218 @@ return true;
             }
         }
 
+        private void ParseHtmlToJsonTypeTaobao(HtmlAgilityPack.HtmlDocument doc, string strHtml) {
+            string strData = "";
+            HtmlAgilityPack.HtmlNodeCollection nodes;
+            HtmlAgilityPack.HtmlNode selNode;
+            AddDataRow("Product Type", "Taobao");
+
+            JObject Jdata = new JObject();
+
+            
+            //샵네임
+            //selNode = doc.DocumentNode.SelectSingleNode("/html/body/div[6]/div/div[2]/div/div/div/div/div[1]/div/div[1]/a/img");
+            //if (selNode != null) {
+            //    AddDataRow("샵네임", selNode.Attributes["src"].Value);
+            //}
+
+            //상품명
+            //selNode = doc.DocumentNode.SelectSingleNode("/html/body/div[6]/div/div[3]/div[1]/div[1]/div[1]/div/div[2]/div/div/div[1]/h3");
+            selNode = doc.DocumentNode.SelectSingleNode("//*[@id='J_Title']/h3");
+            if (selNode != null) {
+                AddDataRow("상품명", selNode.InnerText.Trim());
+                Jdata.Add("title", selNode.InnerText.Trim());
+            }
+
+            //
+
+            //옵션1차
+            //text에서 skuMap과 propertyMemoMap을 정규식으로 json 형태를 가져온다.
+            string patternProperty = @"propertyMemoMap\s*:\s*({[^}]+})";
+            string patternSkuMap = @"skuMap\s*:\s*({[^}]+})";
+
+            // 정규식을 사용하여 일치하는 부분을 찾습니다.
+            Match matchSkuMap = Regex.Match(strHtml, patternSkuMap);
+
+            Match matchProperty = Regex.Match(strHtml, patternProperty);
+
+            var cateList = new List<ClassCategory> { };
+            /*
+            propertyMemoMap: {
+                "1627207:9482005796":"玫瑰金【勺+筷子+盒+袋】",
+                "1627207:9482005795":"金色【勺+筷子+叉+盒】",
+            }
+
+            skuMap     : {
+                ";1627207:9481880357;":{"price":"8.00","stock":"2","skuId":"4605431747564","oversold":false},
+                ";1627207:9482005794;":{"price":"11.50","stock":"2","skuId":"4605439795219","oversold":false},
+                ";1627207:9482005795;":{"price":"10.50","stock":"2","skuId":"4605439795220","oversold":false}
+            }
+             */
+            ClassCategory cate;
+            if (matchProperty.Success) {//propertyMemoMap을 가져오면 검색 시작
+
+                cate = new ClassCategory();
+                JObject jsonProperty = JObject.Parse(matchProperty.Groups[1].Value);
+                if (matchSkuMap.Success) {
+                    // 일치하는 부분을 출력합니다.
+                    string skuMapJson = matchSkuMap.Groups[1].Value;
+                    JObject json = JObject.Parse(skuMapJson);
+                    JToken jt = json["skuMap"];
+                    foreach (JProperty j in jt) {
+                        cate.op_id = j.Name.Replace(";","");//";1627207:9481880357;"
+                        cate.op_price = j["price"].ToString();
+                        cate.op_name = jsonProperty[cate.op_id].ToString();
+
+                        nodes = doc.DocumentNode.SelectNodes("//*[@id=\"J_isku\"]/div/dl[1]/dd/ul/li");//node에서 id와 같은 node 찾아서 backgroup:url을 가져와서 op_image에 넣기
+                        if (nodes != null) {
+                            for (int i = 0; i < nodes.Count; i++) {
+                                if (nodes[i].Attributes["data-value"].Value == cate.op_id) {
+                                    //var selectNode = doc.DocumentNode.SelectSingleNode(string.Format("/html/body/div[6]/div/div[3]/div[2]/div[1]/div[1]/div/div[2]/div/div/div[7]/div/dl[1]/dd/ul/li[{0}]/a/span", i + 1));
+                                    var selectNode = doc.DocumentNode.SelectSingleNode(string.Format("//*[@id=\"J_isku\"]/div/dl[1]/dd/ul/li[{0}]/a", i + 1));
+                                    if (selectNode != null) {
+                                        //<a href="javascript:;" style="background:url(//gd2.alicdn.com/imgextra/i3/3782733382/O1CN01Mxzkgq1ar074FBBTr_!!3782733382.jpg_30x30.jpg) center no-repeat;" data-spm-anchor-id="2013.1.iteminfo.5">
+                                        cate.op_image = selectNode.Attributes["style"].Value.Replace(@"background:url(//", "").Replace("_30x30.jpg) center no-repeat;", "");
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else {
+                Console.WriteLine("일치하는 항목을 찾을 수 없습니다.");
+            }
+
+                ////*[@id="J_isku"]/div/dl[1]/dd/ul/li
+                nodes = doc.DocumentNode.SelectNodes("//*[@id=\"J_isku\"]/div/dl[1]/dd/ul/li");
+            if (nodes != null) {
+                for (int i = 0; i < nodes.Count; i++) {
+                    //var selectNode = doc.DocumentNode.SelectSingleNode(string.Format("/html/body/div[6]/div/div[3]/div[2]/div[1]/div[1]/div/div[2]/div/div/div[7]/div/dl[1]/dd/ul/li[{0}]/a/span", i + 1));
+                    var selectNode = doc.DocumentNode.SelectSingleNode(string.Format("//*[@id=\"J_isku\"]/div/dl[1]/dd/ul/li[{0}]/a/span", i + 1));
+                    if (selectNode != null) {
+                        AddDataRow("옵션1[" + i + "]", selectNode.InnerText);
+                    }
+                }
+            }
+            
+
+
+            //옵션2차
+            //nodes = doc.DocumentNode.SelectNodes("//*[@id='root']/div/div[2]/div[2]/div[1]/div/div[2]/div[5]/div/div/div[1]/div[2]/div/div");
+            //if (nodes != null) {
+            //    for (int i = 0; i < nodes.Count; i++) {
+            //        var selectNode = doc.DocumentNode.SelectSingleNode(string.Format("//*[@id='root']/div/div[2]/div[2]/div[1]/div/div[2]/div[5]/div/div/div[1]/div[2]/div/div[{0}]/div/span", i + 1));
+            //        if (selectNode != null) {
+            //            AddDataRow("옵션2[" + (i + 1) + "]", selectNode.InnerText);
+            //        }
+            //    }
+            //}
+            //
+            //Item상세정보
+            nodes = doc.DocumentNode.SelectNodes("//*[@id='attributes']/ul/li");
+            if (nodes != null) {
+                for (int i = 0; i < nodes.Count; i++) {
+                    var selectNode = doc.DocumentNode.SelectSingleNode(string.Format("//*[@id='attributes']/ul/li[{0}]", i + 1));
+                    if (selectNode != null) {
+                        AddDataRow("Item상세정보[" + (i + 1) + "]", selectNode.InnerText.Replace("&nbsp;", ""));
+                    }
+                }
+            }
+
+            //상세이미지정보
+            ////*[@id="root"]/div/div[2]/div[2]/div[3]/div[2]/div[1]/div/div[2]/div/div[1]/img
+            // /html/body/div[6]/div/div[3]/div[4]/div[1]/div[1]/div[1]/div[4]/div/div/div/img[1]
+            // /html/body/div[6]/div/div[3]/div[4]/div[1]/div[1]/div[1]/div[4]/div/div/div/img[2]
+            nodes = doc.DocumentNode.SelectNodes("//*[@id='J_DivItemDesc']/p[3]/img");
+            if (nodes != null) {
+                for (int i = 0; i < nodes.Count - 1; i++) {
+                    var selectNode = doc.DocumentNode.SelectSingleNode(string.Format("//*[@id='J_DivItemDesc']/p[3]/img[{0}]", i + 1));
+                    if (selectNode != null) {
+                        AddDataRow("상세이미지[" + (i + 1) + "]", selectNode.Attributes["src"].Value);
+                    }
+                }
+            }
+        }
+
+
+        private void ParseHtmlToJsonTypeTmall(HtmlAgilityPack.HtmlDocument doc) {
+            string strData = "";
+            HtmlAgilityPack.HtmlNodeCollection nodes;
+            HtmlAgilityPack.HtmlNode selNode;
+
+            AddDataRow("Product Type", "Tmall");
+            JObject Jdata = new JObject();
+            //샵네임
+            //selNode = doc.DocumentNode.SelectSingleNode("//*[@id='root']/div/div[2]/div[1]/a/div[1]/div[1]/div");
+            //if (selNode != null) {
+            //    AddDataRow("샵네임", selNode.InnerText);
+            //}
+
+            //상품명
+            selNode = doc.DocumentNode.SelectSingleNode("//*[@id='root']/div/div[2]/div[2]/div[1]/div/div[2]/div[1]/h1");
+            if (selNode != null) {
+                Jdata.Add("product_name", selNode.InnerText);
+            }
+            //옵션1차
+            nodes = doc.DocumentNode.SelectNodes("//*[@id='root']/div/div[2]/div[2]/div[1]/div/div[2]/div[5]/div/div/div[1]/div[1]/div/div");
+            if (nodes != null) {
+                for (int i = 0; i < nodes.Count; i++) {
+                    var selectNode = doc.DocumentNode.SelectSingleNode(string.Format("//*[@id='root']/div/div[2]/div[2]/div[1]/div/div[2]/div[5]/div/div/div[1]/div[1]/div/div[{0}]/div/span", i + 1));
+                    if (selectNode != null) {
+                        AddDataRow("옵션1[" + i + "]", selectNode.InnerText);
+                    }
+                }
+            }
+
+            //옵션2차
+            nodes = doc.DocumentNode.SelectNodes("//*[@id='root']/div/div[2]/div[2]/div[1]/div/div[2]/div[5]/div/div/div[1]/div[2]/div/div");
+            if (nodes != null) {
+                for (int i = 0; i < nodes.Count; i++) {
+                    var selectNode = doc.DocumentNode.SelectSingleNode(string.Format("//*[@id='root']/div/div[2]/div[2]/div[1]/div/div[2]/div[5]/div/div/div[1]/div[2]/div/div[{0}]/div/span", i + 1));
+                    if (selectNode != null) {
+                        AddDataRow("옵션2[" + (i + 1) + "]", selectNode.InnerText);
+                    }
+                }
+            }
+
+            //Item상세정보
+            nodes = doc.DocumentNode.SelectNodes("//*[@id=\"root\"]/div/div[2]/div[2]/div[3]/div[2]/div[1]/div/div[1]/div/div");
+            if (nodes != null) {
+                for (int i = 0; i < nodes.Count; i++) {
+                    var nodesSub = doc.DocumentNode.SelectNodes(string.Format("//*[@id='root']/div/div[2]/div[2]/div[3]/div[2]/div[1]/div/div[1]/div/div[{0}]/span", i + 1));
+                    if (nodesSub != null) {
+                        for (int j = 0; j < nodesSub.Count; j++) {
+                            var selectNode = doc.DocumentNode.SelectSingleNode(string.Format("//*[@id='root']/div/div[2]/div[2]/div[3]/div[2]/div[1]/div/div[1]/div/div[{0}]/span[{1}]", i + 1, j + 1));
+                            if (selectNode != null) {
+                                AddDataRow("Item상세정보[" + (i + 1) + "," + (j + 1) + "]", selectNode.InnerText);
+                            }
+                        }
+                    }
+                }
+            }
+
+            //상세이미지정보
+            ////*[@id="root"]/div/div[2]/div[2]/div[3]/div[2]/div[1]/div/div[2]/div/div[1]/img
+            nodes = doc.DocumentNode.SelectNodes("//*[@id='root']/div/div[2]/div[2]/div[3]/div[2]/div[1]/div/div[2]/div/div");
+            if (nodes != null) {
+                for (int i = 0; i < nodes.Count - 1; i++) {
+                    var selectNode = doc.DocumentNode.SelectSingleNode(string.Format("//*[@id='root']/div/div[2]/div[2]/div[3]/div[2]/div[1]/div/div[2]/div/div[{0}]/img", i + 1));
+                    if (selectNode != null) {
+                        AddDataRow("상세이미지[" + (i + 1) + "]", selectNode.Attributes["src"].Value);
+                    }
+                }
+            }
+
+
+        }
         /// <summary>
         /// Taobao HTML Pasing Type A
         /// 테스트 상품 : 673983424836
         /// </summary>
         /// <param name="doc"></param>
-        private void ParseHtmlToDataTableTypeA(HtmlAgilityPack.HtmlDocument doc) {
+        private void ParseHtmlToDataTableTypeA_All(HtmlAgilityPack.HtmlDocument doc) {
             string strData = "";
             HtmlAgilityPack.HtmlNodeCollection nodes;
             HtmlAgilityPack.HtmlNode selNode;

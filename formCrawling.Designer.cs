@@ -201,6 +201,9 @@
             this.txtUrl.Name = "txtUrl";
             this.txtUrl.Size = new System.Drawing.Size(679, 21);
             this.txtUrl.TabIndex = 6;
+            this.txtUrl.Text = "https://item.taobao.com/item.htm?id=724580911107&spm=a2141.241046-kr.feeds.127&eu" +
+    "rl=http://click.mz.simba.taobao.com/necpm&country=KR&itemIds=724580911107&scm=10" +
+    "07.35313.250647.0";
             this.txtUrl.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtUrl_KeyPress);
             // 
             // splitContainer1

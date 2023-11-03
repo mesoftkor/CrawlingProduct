@@ -85,8 +85,8 @@ namespace CrawlingProduct {
 			//Main Form 전체 영역에 붙이기
 			//_chrome.Dock = DockStyle.Fill;
 			//페이지 로딩 완료 이벤트
-			//_chrome.LoadingStateChanged += OnLoadingStateChanged;
-			//_chrome.AddressChanged += Browser_AddressChanged;
+			_chrome.LoadingStateChanged += OnLoadingStateChanged;
+			_chrome.AddressChanged += Browser_AddressChanged;
 		}
 
 		private void initBrowser() {
@@ -199,7 +199,7 @@ namespace CrawlingProduct {
 
 		private void NextProductCall() {
 			//현재 확인 라인이 Completed가 아닌경우 다시 재시도
-			if (intDataRowNum < 0 || dtProductList.Rows[intDataRowNum]["complete"].ToString() == "Completed")
+			if (intDataRowNum < 0 || dtProductList.Rows[intDataRowNum]["complete"].ToString() == "Completed" || dtProductList.Rows[intDataRowNum]["complete"].ToString() == "Not Completed")
 				intDataRowNum++;
 			if (dtProductList.Rows.Count - 1 == intDataRowNum) {
 				PrintStatusConsole("종료");
@@ -223,6 +223,16 @@ namespace CrawlingProduct {
 
 				//현재 html에 Sorry, we have detected unusual traffic from your network. 가 뜨는지 확인
 				//https://img.alicdn.com/imgextra/i2/O1CN010VLpQY1VWKHBQuBUQ_!!6000000002660-2-tps-222-222.png
+
+				//일단 tmall이 처리되지 않으므로 주소가 tmall이면 패스하도록 세팅
+				if(strUrl.Contains("detail.tmall.com")) {
+					dtProductList.Rows[intDataRowNum]["product_type"] = "Unknown";
+					dtProductList.Rows[intDataRowNum]["complete"] = "Not Completed";
+					//intDataRowNum++;
+					await Task.Delay(2000);
+					NextProductCall();
+					return;
+				}
 
 				//1. html을 가져오기 전에 아래로 스크롤을 하지 않으면 상세 이미지가 로드되지 않으므로 scroll후 html 가져오기
 				await Task.Delay(3000);
@@ -272,7 +282,7 @@ return true;
 				PrintStatusConsole(strProductNum + "상품 저장 완료");
 				NextProductCall();
 			}
-			else if (!args.IsLoading && strUrl.Contains("https://item.taobao.com//item.htm/")) {
+			else if (!args.IsLoading && strUrl.Contains("https://login.taobao.com")) {
 				Login();
 				return;
 			}
@@ -424,6 +434,11 @@ return true;
 				Jdata.Add("title", selNode.InnerText.Trim());
 			}
 
+			//상품 메인 이미지
+			string strMainImage = FindauctionImages(strHtml);
+			
+			Jdata.Add("main_img", JArray.Parse(strMainImage));
+
 			var optList = new List<ClassOption> { }; //json 출력을 위한 객체
 			var optFlat = new List<ClassOptionFlat> { };//옵션전체를 저장하기 위한 flat 객체
 			/*  alt 값은 사용하지 않음
@@ -443,46 +458,20 @@ return true;
 			GetOption(1, ref doc, ref optFlat);//옵션1차   //*[@id="J_isku"]/div/dl[1]/dd/ul/li
 			GetOption(2, ref doc, ref optFlat);//옵션2차   //*[@id="J_isku"]/div/dl[2]/dd/ul/li		
 			GetOption(3, ref doc, ref optFlat);//옵션3차   //*[@id="J_isku"]/div/dl[3]/dd/ul/li
-			//옵션을 제대로 가져오는지 확인후
-			//opList를 다시 채우는 작업 필요
 
-			//string strXpathOption1 = "//*[@id=\"J_isku\"]/div/dl[1]/dd/ul/li";
-			//nodes = doc.DocumentNode.SelectNodes(strXpathOption1);//node에서 id와 같은 node 찾아서 backgroup:url을 가져와서 op_image에 넣기
-			//if (nodes != null) {
-			//    for (int i = 0; i < nodes.Count; i++) {
-			//        ClassOptionFlat opt = new ClassOptionFlat();
-			//        opt.opt_level = 1;
-			//        opt.opt_id = nodes[i].Attributes["data-value"].Value;//option id
-			//        opt.opt_name = doc.DocumentNode.SelectSingleNode(string.Format("{0}[{1}]/a/span", strXpathOption1, i + 1)).InnerText;//option name
-			//        var selectNode = doc.DocumentNode.SelectSingleNode(string.Format("{0}[{1}]/a", strXpathOption1, i + 1));
-			//        if (selectNode != null && selectNode.Attributes.Contains("style")) {
-			//            //<a href="javascript:;" style="background:url(//gd2.alicdn.com/imgextra/i3/3782733382/O1CN01Mxzkgq1ar074FBBTr_!!3782733382.jpg_30x30.jpg) center no-repeat;" data-spm-anchor-id="2013.1.iteminfo.5">
-			//            opt.opt_image = selectNode.Attributes["style"].Value.Replace(@"background:url(//", "").Replace(") center no-repeat;", "");
-			//        }
-			//        else {
-			//            opt.opt_image = "";
-			//        }
-			//    }
-			//}
-
-			//text에서 skuMap과 propertyMemoMap을 정규식으로 json 형태를 가져온다.
-			// 정규식을 사용하여 일치하는 부분을 찾습니다.
-			//string strProperty = FindPattern(strHtml, @"propertyMemoMap\s*:\s*({[^}]+})");
-			//skuMap\s*:\s*\{[^}]+?\}
-
-			//string strProperty = FindpropertyMemoMap(strHtml);
-			string strSkuMap = FindSkuMap(strHtml);
+			
 
 			ClassOption cate;
-            //JObject json = JObject.Parse(strSkuMap);
-            JToken jt = Newtonsoft.Json.Linq.JToken.Parse(strSkuMap);
-			//JToken jt = json.
+			string strSkuMap = FindSkuMap(strHtml);
+			JToken jt = Newtonsoft.Json.Linq.JToken.Parse(strSkuMap);
 			string[] strOptId;
 
             foreach (JProperty j in jt) {
 				cate = new ClassOption();
 				strOptId = j.Name.Split(new char[] { '|' },StringSplitOptions.RemoveEmptyEntries);
-				if (strOptId.Length > 1) {
+				if (strOptId == null || strOptId.Length == 0)
+					break;
+				if (strOptId.Length >= 1) {
 					var optItem = optFlat.FirstOrDefault(item => item.opt_level == 1 && item.opt_id == strOptId[0]);
 					if (optItem != null) {
 						cate.opt1_id = optItem.opt_id;
@@ -490,7 +479,7 @@ return true;
 						cate.opt1_name = optItem.opt_name;
 					}
 				}
-				if (strOptId.Length > 2) {
+				if (strOptId.Length >= 2) {
 					var optItem = optFlat.FirstOrDefault(item => item.opt_level == 2 && item.opt_id == strOptId[1]);
 					if (optItem != null) {
 						cate.opt2_id = optItem.opt_id;
@@ -506,15 +495,13 @@ return true;
 						cate.opt3_name = optItem.opt_name;
 					}
 				}
-				else
-					break;
 				cate.opt_id = j.Name;//";1627207:9481880357;"
 				cate.opt_price = j.Value["price"].Value<string>();
 				optList.Add(cate);
 			}
 			//Jdata.Add("item_option", JsonConvert.SerializeObject(optList));
 			Jdata.Add("item_option", JArray.FromObject(optList));
-			
+
 
 
 
@@ -554,33 +541,65 @@ return true;
 			//}
 			//
 			//Item상세정보
+			List<string> listItemDetail = new List<string>();
 			nodes = doc.DocumentNode.SelectNodes("//*[@id='attributes']/ul/li");
 			if (nodes != null) {
 				for (int i = 0; i < nodes.Count; i++) {
 					var selectNode = doc.DocumentNode.SelectSingleNode(string.Format("//*[@id='attributes']/ul/li[{0}]", i + 1));
 					if (selectNode != null) {
-						AddDataRow("Item상세정보[" + (i + 1) + "]", selectNode.InnerText.Replace("&nbsp;", ""));
-						Jdata.Add("Item_detail[" + (i + 1) + "]", selectNode.InnerText.Replace("&nbsp;", ""));
+						//AddDataRow("Item상세정보[" + (i + 1) + "]", selectNode.InnerText.Replace("&nbsp;", ""));
+						//Jdata.Add("Item_detail[" + (i + 1) + "]", selectNode.InnerText.Replace("&nbsp;", ""));
+						listItemDetail.Add(selectNode.InnerText.Replace("&nbsp;", ""));
 					}
 				}
 			}
+			Jdata.Add("item_detail", JArray.FromObject(listItemDetail));
 
-			//상세이미지정보
+			//상세이미지정보 - 1타입
 			// //*[@id="J_DivItemDesc"]/div/div[3]/img
 			// //*[@id="J_DivItemDesc"]/div/div[4]/img
 			nodes = doc.DocumentNode.SelectNodes("//*[@id='J_DivItemDesc']/div/div");
+			List<string> listDetailImage = new List<string>();
 			if (nodes != null) {
 				for (int i = 3; i <= nodes.Count; i++) {
 					var selectNode = doc.DocumentNode.SelectSingleNode(string.Format("//*[@id='J_DivItemDesc']/div/div[{0}]/img", i));
 					if (selectNode != null) {
-						AddDataRow("상세이미지[" + (i - 2) + "]", selectNode.Attributes["src"].Value);
-						Jdata.Add("Item_detail_image[" + (i - 2) + "]", selectNode.Attributes["src"].Value);
+						//AddDataRow("상세이미지[" + (i - 2) + "]", selectNode.Attributes["src"].Value);
+						//Jdata.Add("Item_detail_image[" + (i - 2) + "]", selectNode.Attributes["src"].Value);
+						listDetailImage.Add(selectNode.Attributes["src"].Value);
+					}
+				}
+            }
+            else {
+				//상세이미지정보-2타입
+				//*[@id="J_DivItemDesc"]/p[1]/img[2]
+				////*[@id="root"]/div/div[2]/div[2]/div[3]/div[2]/div[1]/div/div[2]/div/div[1]/img
+				// /html/body/div[6]/div/div[3]/div[4]/div[1]/div[1]/div[1]/div[4]/div/div/div/img[1]
+				// /html/body/div[6]/div/div[3]/div[4]/div[1]/div[1]/div[1]/div[4]/div/div/div/img[2]
+				//int intImageCount = 1;
+				nodes = doc.DocumentNode.SelectNodes("//*[@id='J_DivItemDesc']/p");
+				if (nodes != null) {
+					for (int i = 0; i < nodes.Count; i++) {
+						var ImagesNodes = doc.DocumentNode.SelectNodes(string.Format("//*[@id='J_DivItemDesc']/p[{0}]/img", i+1));
+						if (ImagesNodes == null) continue;
+						for (int j = 0; j < ImagesNodes.Count; j++) {
+							var selectNode = doc.DocumentNode.SelectSingleNode(string.Format(string.Format("//*[@id='J_DivItemDesc']/p[{0}]/img[{1}]", i + 1, j + 1)));
+							if (selectNode != null) {
+								//AddDataRow("상세이미지[" + intImageCount + "]", selectNode.Attributes["src"].Value);
+								//Jdata.Add("Item_detail_image[" + intImageCount + "]", selectNode.Attributes["src"].Value);
+								listDetailImage.Add(selectNode.Attributes["src"].Value);
+								//intImageCount++;
+							}
+						}
 					}
 				}
 			}
 
+			Jdata.Add("detail_img", JArray.FromObject(listDetailImage));
+			//*[@id="J_DivItemDesc"]/p[1]/img[1]
+
 			string strJson = JsonConvert.SerializeObject(Jdata);
-			System.IO.File.WriteAllText(strProductNum+".json", strJson);
+			System.IO.File.WriteAllText((strProductNum==null?"TEST":strProductNum)+".json", strJson);
 		}
 
 		/// <summary>
@@ -619,19 +638,24 @@ return true;
 		}
 
 		private string FindSkuMap(string strText) {
-			string strReturn;
 			int intStart, intEnd;
 			intStart = strText.IndexOf("skuMap     : {", 0);
 			intEnd = strText.IndexOf("}}", intStart);
 			return strText.Substring(intStart + 13, intEnd - intStart - 11).Replace(";", "|");
 		}
 		private string FindpropertyMemoMap(string strText) {
-			string strReturn;
 			int intStart, intEnd;
 			intStart = strText.IndexOf("propertyMemoMap: {", 0);
 			intEnd = strText.IndexOf("}", intStart);
 			//return strText.Substring(intStart, intEnd - intStart + 1).Replace("propertyMemoMap", "\"propertyMemoMap\"");
 			return strText.Substring(intStart + 17, intEnd - intStart - 16);
+		}
+
+		private string FindauctionImages(string strText) {
+			int intStart, intEnd;
+			intStart = strText.IndexOf("auctionImages    : ", 0);
+			intEnd = strText.IndexOf("]", intStart);
+			return strText.Substring(intStart + 19, intEnd - intStart - 18);
 		}
 
 		private void ParseHtmlToJsonTypeTmall(HtmlAgilityPack.HtmlDocument doc) {

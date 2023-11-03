@@ -39,12 +39,12 @@
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.tabRight = new System.Windows.Forms.TabControl();
             this.tabProductList = new System.Windows.Forms.TabPage();
+            this.btnTest = new DevExpress.XtraEditors.SimpleButton();
             this.gridProductList = new System.Windows.Forms.DataGridView();
             this.tabHtml = new System.Windows.Forms.TabPage();
             this.txtHtml = new System.Windows.Forms.RichTextBox();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.btnTest = new DevExpress.XtraEditors.SimpleButton();
             this.tabMain.SuspendLayout();
             this.tabBrowser.SuspendLayout();
             this.layoutTop.SuspendLayout();
@@ -246,6 +246,15 @@
             this.tabProductList.Text = "Product List";
             this.tabProductList.UseVisualStyleBackColor = true;
             // 
+            // btnTest
+            // 
+            this.btnTest.Location = new System.Drawing.Point(217, 3);
+            this.btnTest.Name = "btnTest";
+            this.btnTest.Size = new System.Drawing.Size(109, 27);
+            this.btnTest.TabIndex = 6;
+            this.btnTest.Text = "test";
+            this.btnTest.Click += new System.EventHandler(this.btnTest_Click);
+            // 
             // gridProductList
             // 
             this.gridProductList.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
@@ -293,15 +302,6 @@
             this.statusLabel.Size = new System.Drawing.Size(1000, 17);
             this.statusLabel.Text = "toolStripStatusLabel1";
             this.statusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // btnTest
-            // 
-            this.btnTest.Location = new System.Drawing.Point(217, 3);
-            this.btnTest.Name = "btnTest";
-            this.btnTest.Size = new System.Drawing.Size(109, 27);
-            this.btnTest.TabIndex = 6;
-            this.btnTest.Text = "test";
-            this.btnTest.Click += new System.EventHandler(this.btnTest_Click);
             // 
             // formCrawling
             // 

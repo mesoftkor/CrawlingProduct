@@ -44,6 +44,7 @@
             this.txtHtml = new System.Windows.Forms.RichTextBox();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.btnTest = new DevExpress.XtraEditors.SimpleButton();
             this.tabMain.SuspendLayout();
             this.tabBrowser.SuspendLayout();
             this.layoutTop.SuspendLayout();
@@ -196,7 +197,7 @@
             // 
             // txtUrl
             // 
-            this.txtUrl.Location = new System.Drawing.Point(78, 67);
+            this.txtUrl.Location = new System.Drawing.Point(78, 70);
             this.txtUrl.Name = "txtUrl";
             this.txtUrl.Size = new System.Drawing.Size(679, 21);
             this.txtUrl.TabIndex = 6;
@@ -232,6 +233,7 @@
             // 
             // tabProductList
             // 
+            this.tabProductList.Controls.Add(this.btnTest);
             this.tabProductList.Controls.Add(this.gridProductList);
             this.tabProductList.Location = new System.Drawing.Point(4, 22);
             this.tabProductList.Name = "tabProductList";
@@ -289,6 +291,15 @@
             this.statusLabel.Text = "toolStripStatusLabel1";
             this.statusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
+            // btnTest
+            // 
+            this.btnTest.Location = new System.Drawing.Point(217, 3);
+            this.btnTest.Name = "btnTest";
+            this.btnTest.Size = new System.Drawing.Size(109, 27);
+            this.btnTest.TabIndex = 6;
+            this.btnTest.Text = "test";
+            this.btnTest.Click += new System.EventHandler(this.btnTest_Click);
+            // 
             // formCrawling
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
@@ -343,6 +354,7 @@
         private System.Windows.Forms.ToolStripStatusLabel statusLabel;
         private System.Windows.Forms.TextBox txtUrl;
         private System.Windows.Forms.Button btnComapareImage;
+        private DevExpress.XtraEditors.SimpleButton btnTest;
     }
 }
 

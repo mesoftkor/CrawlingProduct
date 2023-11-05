@@ -34,16 +34,17 @@
             this.btnStart = new System.Windows.Forms.Button();
             this.btnShowHtml = new System.Windows.Forms.Button();
             this.btnGetProductList = new System.Windows.Forms.Button();
+            this.btnComapareImage = new System.Windows.Forms.Button();
             this.txtUrl = new System.Windows.Forms.TextBox();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.tabRight = new System.Windows.Forms.TabControl();
             this.tabProductList = new System.Windows.Forms.TabPage();
+            this.btnTest = new DevExpress.XtraEditors.SimpleButton();
             this.gridProductList = new System.Windows.Forms.DataGridView();
             this.tabHtml = new System.Windows.Forms.TabPage();
             this.txtHtml = new System.Windows.Forms.RichTextBox();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.btnComapareImage = new System.Windows.Forms.Button();
             this.tabMain.SuspendLayout();
             this.tabBrowser.SuspendLayout();
             this.layoutTop.SuspendLayout();
@@ -184,12 +185,25 @@
             this.btnGetProductList.UseVisualStyleBackColor = true;
             this.btnGetProductList.Click += new System.EventHandler(this.btnGetProductList_Click);
             // 
+            // btnComapareImage
+            // 
+            this.btnComapareImage.Location = new System.Drawing.Point(233, 13);
+            this.btnComapareImage.Name = "btnComapareImage";
+            this.btnComapareImage.Size = new System.Drawing.Size(194, 19);
+            this.btnComapareImage.TabIndex = 0;
+            this.btnComapareImage.Text = "이미지 비교 테스트(미작업)";
+            this.btnComapareImage.UseVisualStyleBackColor = true;
+            this.btnComapareImage.Click += new System.EventHandler(this.btnComapareImage_Click);
+            // 
             // txtUrl
             // 
-            this.txtUrl.Location = new System.Drawing.Point(78, 67);
+            this.txtUrl.Location = new System.Drawing.Point(78, 70);
             this.txtUrl.Name = "txtUrl";
             this.txtUrl.Size = new System.Drawing.Size(679, 21);
             this.txtUrl.TabIndex = 6;
+            this.txtUrl.Text = "https://item.taobao.com/item.htm?id=724580911107&spm=a2141.241046-kr.feeds.127&eu" +
+    "rl=http://click.mz.simba.taobao.com/necpm&country=KR&itemIds=724580911107&scm=10" +
+    "07.35313.250647.0";
             this.txtUrl.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtUrl_KeyPress);
             // 
             // splitContainer1
@@ -222,6 +236,7 @@
             // 
             // tabProductList
             // 
+            this.tabProductList.Controls.Add(this.btnTest);
             this.tabProductList.Controls.Add(this.gridProductList);
             this.tabProductList.Location = new System.Drawing.Point(4, 22);
             this.tabProductList.Name = "tabProductList";
@@ -230,6 +245,15 @@
             this.tabProductList.TabIndex = 0;
             this.tabProductList.Text = "Product List";
             this.tabProductList.UseVisualStyleBackColor = true;
+            // 
+            // btnTest
+            // 
+            this.btnTest.Location = new System.Drawing.Point(217, 3);
+            this.btnTest.Name = "btnTest";
+            this.btnTest.Size = new System.Drawing.Size(109, 27);
+            this.btnTest.TabIndex = 6;
+            this.btnTest.Text = "test";
+            this.btnTest.Click += new System.EventHandler(this.btnTest_Click);
             // 
             // gridProductList
             // 
@@ -278,16 +302,6 @@
             this.statusLabel.Size = new System.Drawing.Size(1000, 17);
             this.statusLabel.Text = "toolStripStatusLabel1";
             this.statusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // btnComapareImage
-            // 
-            this.btnComapareImage.Location = new System.Drawing.Point(233, 13);
-            this.btnComapareImage.Name = "btnComapareImage";
-            this.btnComapareImage.Size = new System.Drawing.Size(194, 19);
-            this.btnComapareImage.TabIndex = 0;
-            this.btnComapareImage.Text = "이미지 비교 테스트(미작업)";
-            this.btnComapareImage.UseVisualStyleBackColor = true;
-            this.btnComapareImage.Click += new System.EventHandler(this.btnComapareImage_Click);
             // 
             // formCrawling
             // 
@@ -343,6 +357,7 @@
         private System.Windows.Forms.ToolStripStatusLabel statusLabel;
         private System.Windows.Forms.TextBox txtUrl;
         private System.Windows.Forms.Button btnComapareImage;
+        private DevExpress.XtraEditors.SimpleButton btnTest;
     }
 }
 

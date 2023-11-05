@@ -1,11 +1,6 @@
 ﻿using CefSharp;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using HtmlAgilityPack;
@@ -53,6 +48,7 @@ namespace CrawlingProduct {
             }
 
         }
+
         /// <summary>
         /// 상품리스트와 상태를 저장할 DataTable 초기화
         /// </summary>
@@ -71,34 +67,11 @@ namespace CrawlingProduct {
             if (!Cef.IsInitialized)
                 Cef.Initialize(settings);
 
-            //웹 사이트 이동
-            //_chrome = new ChromiumWebBrowser("https://login.taobao.com/member/login.jhtml");
-            //_chrome.LoadUrl("https://login.taobao.com/member/login.jhtml");
-            //한국어 설정
-            //_chrome.BrowserSettings.AcceptLanguageList = "ko-KR";
-            //Main Form에 CefSharp컨트롤 추가
-            //this.Controls.Add(_chrome);
-            //Main Form 전체 영역에 붙이기
-            //_chrome.Dock = DockStyle.Fill;
             //페이지 로딩 완료 이벤트
             _chrome.LoadingStateChanged += OnLoadingStateChanged;
             _chrome.AddressChanged += Browser_AddressChanged;
             //_chrome.JavascriptMessageReceived += OnBrowserJavascriptMessageReceived;
             //_chrome.FrameLoadEnd += OnFrameLoadEnd;
-        }
-
-        private void initBrowser() {
-            _chrome = new CefSharp.WinForms.ChromiumWebBrowser();
-            tabBrowser.Controls.Add(this._chrome);
-            tabBrowser.Location = new System.Drawing.Point(4, 22);
-            tabBrowser.Name = "tabBrowser";
-            tabBrowser.Padding = new System.Windows.Forms.Padding(3);
-            tabBrowser.Size = new System.Drawing.Size(908, 466);
-            tabBrowser.TabIndex = 0;
-            tabBrowser.Text = "Browser";
-            tabBrowser.UseVisualStyleBackColor = true;
-            _chrome.LoadingStateChanged += OnLoadingStateChanged;
-            _chrome.AddressChanged += Browser_AddressChanged;
         }
 
         #region Crawing Product
@@ -144,6 +117,7 @@ namespace CrawlingProduct {
             }
             return false;
         }
+
         private void ClickButtonUsingXPath(string xpath) {
             string script = string.Format(@"
         var iterator = document.evaluate('{0}', document, null, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
@@ -209,18 +183,6 @@ namespace CrawlingProduct {
         private async void OnLoadingStateChanged(object sender, LoadingStateChangedEventArgs args) {
             Console.WriteLine(string.Format("[{0}]{1}", strProductNum, strUrl));
             if (!args.IsLoading && strUrl.Contains(strProductNum)) {
-                //블럭 우회 체크
-                //if ()
-                    //    GetModifiedMac();
-                    //initBrowser();
-                    //    Login();
-                    //    return;
-                //    }
-                //}
-
-                //현재 html에 Sorry, we have detected unusual traffic from your network. 가 뜨는지 확인
-                //https://img.alicdn.com/imgextra/i2/O1CN010VLpQY1VWKHBQuBUQ_!!6000000002660-2-tps-222-222.png
-
                 //1. html을 가져오기 전에 아래로 스크롤을 하지 않으면 상세 이미지가 로드되지 않으므로 scroll후 html 가져오기
                 await Task.Delay(3000);
                 PrintStatusConsole("스크롤링 시작 ");
@@ -274,10 +236,6 @@ return true;
 
             if (e.Address == "https://world.taobao.com/" || e.Address.Contains("https://i.taobao.com/my_taobao.htm?")) { // || e.Address.Contains("https://detail.tmall.com/item.htm")) {
                 NextProductCall();
-                //var cookie = Cef.GetGlobalCookieManager();
-                //cookie.Visi
-                //intStep++;
-                //ti.Start();
             }
         }
         #endregion
@@ -483,6 +441,11 @@ return true;
             dtProductList.Rows.Add(drProduct);
         }
 
+        /// <summary>
+        /// 현재 DataTable로 저장하지 않음
+        /// </summary>
+        /// <param name="strKey"></param>
+        /// <param name="strValue"></param>
         private void AddDataRow(string strKey, string strValue) {
 
         }
@@ -564,15 +527,10 @@ return true;
         #endregion
 
         #region UnusaseCheck
-        private void CheckBrowser() {
-            Point WebLocation = _chrome.PointToScreen(new Point(0, 0));
-
-            //(WebLocation.X, WebLocation.Y, _chrome.Size.Width, _chrome.Size.Height)
-        }
-
         #endregion
 
         private void btnComapareImage_Click(object sender, EventArgs e) {
+            //이미지 비교 테스트
             //_chrome.CaptureScreenshotAsync(CefSharp.DevTools.Page.CaptureScreenshotFormat.Png);
             Stopwatch a = new Stopwatch();
             a.Start();
